@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 // FLAGS
@@ -59,13 +60,14 @@ func main() {
 
 	// fmt.Println("Starting game...")
 	StartGameMessage()
-	go StartTimer(flagTimeLimit, &quizGame) // timer
-	go ListenForExit(&quizGame)             // checks for forced exit
+	timer := time.NewTimer(time.Second * time.Duration(flagTimeLimit))
+	// go StartTimer(flagTimeLimit, &quizGame) // timer
+	go ListenForExit(&quizGame) // checks for forced exit
 
 	if flagShuffle {
-		PlayShuffled(&quizGame)
+		PlayShuffled(&quizGame, timer)
 	} else {
-		PlayInOrder(&quizGame)
+		PlayInOrder(&quizGame, timer)
 	}
 
 	GameOverMessage(&quizGame)

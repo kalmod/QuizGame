@@ -11,15 +11,25 @@ import (
 )
 
 // PLAYING ORDER
-func PlayInOrder(quizGame *QuizGameStats) {
+func PlayInOrder(quizGame *QuizGameStats, timer *time.Timer) {
 	reader := bufio.NewReader(os.Stdin)
 
 	for i := 1; i <= quizGame.totalQuestions; i++ {
-		QuestionHandler(quizGame, i, reader)
+		ansCh := make(chan string)
+		go QuestionHandler(quizGame, i, reader, ansCh)
+
+		select {
+		case <-timer.C:
+			return
+		case ans := <-ansCh:
+			if strings.EqualFold(ans, quizGame.problems[i].answer) {
+				quizGame.correctQuestions++
+			}
+		}
 	}
 }
 
-func PlayShuffled(quizGame *QuizGameStats) {
+func PlayShuffled(quizGame *QuizGameStats, timer *time.Timer) {
 	reader := bufio.NewReader(os.Stdin)
 	questionsVisited := make(map[int]bool)
 
@@ -28,27 +38,35 @@ func PlayShuffled(quizGame *QuizGameStats) {
 			continue
 		}
 		questionsVisited[i] = true
-		QuestionHandler(quizGame, i, reader)
+		ansCh := make(chan string)
+		go QuestionHandler(quizGame, i, reader, ansCh)
+
+		select {
+		case <-timer.C:
+			return
+		case ans := <-ansCh:
+			if strings.EqualFold(ans, quizGame.problems[i].answer) {
+				quizGame.correctQuestions++
+			}
+		}
 	}
 }
 
-func QuestionHandler(quizGame *QuizGameStats, i int, reader *bufio.Reader) {
+func QuestionHandler(quizGame *QuizGameStats, i int, reader *bufio.Reader, ansCh chan string) {
 	var Reset = "\033[0m"
 	var Yellow = "\033[33m"
 	fmt.Printf(Yellow+"Question %v:"+Reset+" %v\n", i, quizGame.problems[i].question)
 
 	// Readstring will block until the delimiter is entered
+	fmt.Printf(Yellow + "Ans = " + Reset)
 	input, err := reader.ReadString('\n')
 	if err != nil {
 		log.Fatalf("Err reading input: %v", err)
 		return
 	}
 	input = strings.TrimSpace(strings.TrimSuffix(input, "\n")) // remove delimiter from string
-
-	if strings.EqualFold(input, quizGame.problems[i].answer) {
-		quizGame.correctQuestions++
-	}
 	ResetScreen()
+	ansCh <- input
 }
 
 func StartGameMessage() {
