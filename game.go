@@ -35,7 +35,7 @@ func PlayShuffled(quizGame *QuizGameStats) {
 func QuestionHandler(quizGame *QuizGameStats, i int, reader *bufio.Reader) {
 	var Reset = "\033[0m"
 	var Yellow = "\033[33m"
-	fmt.Printf(Yellow+"Question %v:"+Reset+" %v\n", i, quizGame.problems[i][0])
+	fmt.Printf(Yellow+"Question %v:"+Reset+" %v\n", i, quizGame.problems[i].question)
 
 	// Readstring will block until the delimiter is entered
 	input, err := reader.ReadString('\n')
@@ -45,7 +45,7 @@ func QuestionHandler(quizGame *QuizGameStats, i int, reader *bufio.Reader) {
 	}
 	input = strings.TrimSpace(strings.TrimSuffix(input, "\n")) // remove delimiter from string
 
-	if strings.EqualFold(input, quizGame.problems[i][1]) {
+	if strings.EqualFold(input, quizGame.problems[i].answer) {
 		quizGame.correctQuestions++
 	}
 	ResetScreen()
@@ -74,12 +74,8 @@ func StartGameMessage() {
 	}
 	fmt.Println(startText)
 	fmt.Print("Press enter to begin")
-	reader := bufio.NewReader(os.Stdin)
-	_, err = reader.ReadString('\n')
-	if err != nil {
-		log.Fatalf("Err: %v\n", err)
-		return
-	}
+	var input string
+	fmt.Scanf("%v\n", &input)
 
 	time.Sleep(1 * time.Second)
 

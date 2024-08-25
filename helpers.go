@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-	"io"
 	"math"
 	"math/rand"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -16,9 +16,14 @@ import (
 type Colors [3]uint8
 
 type QuizGameStats struct {
-	problems         map[int][]string
+	problems         []problem
 	correctQuestions int
 	totalQuestions   int
+}
+
+type problem struct {
+	question string
+	answer   string
 }
 
 // GENERAL HELPERS
@@ -38,26 +43,24 @@ func generateRandN(minVal, maxVal int) int {
 	return rand.Intn(maxVal-minVal) + minVal
 }
 
-func OpenProblemsCsv(file_path string) (map[int][]string, error) {
+func OpenProblemsCsv(file_path string) ([]problem, error) {
 	file, err := os.Open(file_path)
-	problems := make(map[int][]string)
+	problems := []problem{}
 	if err != nil {
 		return problems, err
 	}
 
 	csvReader := csv.NewReader(file)
-	i := 1
-	for {
-		line, err := csvReader.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil && err != io.EOF {
-			return problems, err
-		}
-		problems[i] = line
-		i++
+	problemsCSV, err := csvReader.ReadAll()
+	if err != nil {
+		return problems, err
 	}
+
+	for _, line := range problemsCSV {
+		problems = append(
+			problems, problem{line[0], strings.TrimSpace(line[1])})
+	}
+
 	return problems, nil
 }
 
